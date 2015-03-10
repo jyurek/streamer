@@ -12,7 +12,7 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Conduit.Binary as CB
 import qualified Data.Conduit.List as CL
 
-data Progress = Continue | EndSection | EndContent
+data Progress = Continue | EndSection | EndContent deriving Show
 
 takeUntil :: MonadIO m
           => ByteString
@@ -23,70 +23,26 @@ takeUntil boundary = do
     let bs = toStrict lbs
 
     if B.null bs
-        then return ()
+        then liftIO $ print "END" >> return ()
         else do
-            isOpen' <- isOpen
-            if isOpen'
-                then case B.breakSubstring boundary bs of
-                    (beginning, ending) -> do
-                        leftover ending
-                        yield (EndSection, beginning)
-                        takeUntil boundary
-                    otherwise -> do
-                        leftover $ B.drop (bl * 2) bs
-                        yield $ (Continue, B.take (bl * 2) bs)
-                        takeUntil boundary
-                else yield (EndContent, bs) >> return ()
-
-    -- try this:
-    -- take 3x boundary length
-    -- if empty
-    --   return
-    -- if less than expected length or we can tell we're at the end of the stream
-    --   yield it all
-    -- if needle exists
-    --   then leftover snd, yield fst
-    --   else leftover (length of boundary), yield rest
-
-    -- case () of
-    --     _ | BL.null bs -> return ()
-    --       | toStrict bs == boundary -> return ()
-    --       | otherwise -> do
-    --           yield $ toStrict $ BL.singleton $ BL.head bs
-    --           leftover $ toStrict $ BL.tail bs
-
-    --           takeUntil boundary
-
--- sendEach :: MonadIO m
---          => ByteString
---          -> ResumableSource m ByteString
---          -> Sink ByteString m ()
---          -> m ()
--- sendEach boundary source sink =  do
---     (s, b) <- source $$++ takeUntil boundary =$ sink
-
-    -- if b == "--"
-    --     then return ()
-    --     else sendEach boundary s sink
-
-    -- d <- isDone source
-
-    -- if d
-    --     then return ()
-    --     else do
-    --       (s, _) <- source $$++ takeUntil boundary =$ sink
-
-    --       sendEach boundary s sink
-
-  -- where
-    -- isDone rs = do
-    --     (s, _) <- unwrapResumable rs
-
-    --     runConduit $ s $= CC.null
+            pv <- CL.peek
+            case pv of
+                Nothing -> yield (EndContent, bs) >> return ()
+                Just _ -> do
+                    (before, after) <- B.breakSubstring boundary bs
+                    if B.null after
+                        then do
+                            leftover $ B.drop bl after
+                            yield (EndSection, before)
+                            takeUntil boundary
+                        else do
+                            leftover $ B.drop (bl * 2) bs
+                            yield $ (Continue, B.take (bl * 2) bs)
+                            takeUntil boundary
 
 toStrict :: BL.ByteString -> ByteString
 toStrict = B.concat . BL.toChunks
 
-isOpen :: (MonadIO m) => ConduitM i o m Bool
-isOpen = await >>= maybe (return False) ((True <$) . leftover)
--- isOpen = CL.peek >>= maybe (return False) (return True)
+-- isOpen :: (MonadIO m) => ConduitM i o m Bool
+-- isOpen = await >>= maybe (return False) ((True <$) . leftover)
+-- -- isOpen = CL.peek >>= maybe (return False) (return True)

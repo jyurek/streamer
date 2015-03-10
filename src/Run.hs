@@ -53,17 +53,19 @@ multiSinkFile' f = do
     mv <- await
     case mv of
         Nothing -> return ()
-        Just (s, d) -> case s of
-            Continue -> do
-                liftIO $ iohPutStr f d
-                multiSinkFile' f
-            EndSection -> do
-                liftIO $ iohPutStr f d
-                liftIO $ iohClose f
-                multiSinkFile' newFile
-            EndContent -> do
-                liftIO $ iohPutStr f d
-                liftIO $ iohClose f
+        Just (s, d) -> do
+            liftIO $ print s
+            case s of
+                Continue -> do
+                    liftIO $ iohPutStr f d
+                    multiSinkFile' f
+                EndSection -> do
+                    liftIO $ iohPutStr f d
+                    liftIO $ iohClose f
+                    multiSinkFile' newFile
+                EndContent -> do
+                    liftIO $ iohPutStr f d
+                    liftIO $ iohClose f
 
 iohClose :: IO Handle -> IO ()
 iohClose ioh = ioh >>= hClose
@@ -74,7 +76,7 @@ iohPutStr ioh s = ioh >>= flip B.hPutStr s
 newFile :: IO Handle
 newFile = do
     fn <- liftIO $ fmap toString $ nextRandom
-    openFile fn WriteMode
+    openFile ("out/" ++ fn) WriteMode
 
 
 -- forEachPart :: MonadIO m

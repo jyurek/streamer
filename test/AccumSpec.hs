@@ -18,42 +18,47 @@ main = hspec spec
 
 spec :: Spec
 spec = do
-    describe "takeUntil" $ do
-        it "takes until the given boundary" $ do
-            let input = sourceLbs $ C8.unlines
-                    [ "---boundary---"
-                    , "content 1"
-                    , "content 1"
-                    , "---boundary---"
-                    , "content 2"
-                    , "content 2"
-                    , "---boundary---"
-                    , "the rest"
-                    , "---boundary---"
-                    ]
+    describe "isOpen" $ do
+        it "returns False wen the source closed" $ do
+            let sl = sourceList []
 
-            (input', b) <- input $$+ takeUntil "---boundary---\n"
-            (input'', b') <- input' $$++ takeUntil "---boundary---\n"
-            (input''', b'') <- input'' $$++ takeUntil "---boundary---\n"
-            (input'''', b''') <- input''' $$++ takeUntil "---boundary---\n"
-            (_, b'''') <- input'''' $$++ takeUntil "---boundary---\n"
+            v <- sl $= isOe
+    -- describe "takeUntil" $ do
+    --     it "takes until the given boundary" $ do
+    --         let input = sourceLbs $ C8.unlines
+    --                 [ "---boundary---"
+    --                 , "content 1"
+    --                 , "content 1"
+    --                 , "---boundary---"
+    --                 , "content 2"
+    --                 , "content 2"
+    --                 , "---boundary---"
+    --                 , "the rest"
+    --                 , "---boundary---"
+    --                 ]
 
-            b `shouldBe` ""
-            b' `shouldBe` "content 1\ncontent 1\n"
-            b'' `shouldBe` "content 2\ncontent 2\n"
-            b''' `shouldBe` "the rest\n"
-            b'''' `shouldBe` ""
+    --         (input', b) <- input $$+ takeUntil "---boundary---\n"
+    --         (input'', b') <- input' $$++ takeUntil "---boundary---\n"
+    --         (input''', b'') <- input'' $$++ takeUntil "---boundary---\n"
+    --         (input'''', b''') <- input''' $$++ takeUntil "---boundary---\n"
+    --         (_, b'''') <- input'''' $$++ takeUntil "---boundary---\n"
 
-    describe "spread" $ do
-        it "takes each part and sends it to the given sink" $ do
-            let input = sourceLbs $ C8.unlines
-                    [ "---boundary---"
-                    , "content 1"
-                    , "---boundary---"
-                    , "content 2"
-                    , "---boundary---"
-                    ]
+    --         b `shouldBe` ""
+    --         b' `shouldBe` "content 1\ncontent 1\n"
+    --         b'' `shouldBe` "content 2\ncontent 2\n"
+    --         b''' `shouldBe` "the rest\n"
+    --         b'''' `shouldBe` ""
 
-            bs <- spread "---boundary---\n" input
+    -- describe "spread" $ do
+    --     it "takes each part and sends it to the given sink" $ do
+    --         let input = sourceLbs $ C8.unlines
+    --                 [ "---boundary---"
+    --                 , "content 1"
+    --                 , "---boundary---"
+    --                 , "content 2"
+    --                 , "---boundary---"
+    --                 ]
 
-            bs `shouldBe` ["", "content 1\n", "content 2\n"]
+    --         bs <- spread "---boundary---\n" input
+
+    --         bs `shouldBe` ["", "content 1\n", "content 2\n"]

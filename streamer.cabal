@@ -16,7 +16,6 @@ library
                      , Run
   build-depends:       base >= 4 && < 5
                      , conduit
-                     , conduit-combinators
                      , conduit-extra
                      , bytestring
                      , transformers
