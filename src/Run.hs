@@ -23,28 +23,6 @@ runRequest boundary req = runResourceT $ do
     sourceRequestBody req $= takeUntil boundary $$ multiSinkFile
     return ()
 
-    -- sourceRequestBody req $= removeVowels $$ sinkFile'
-    -- b <- sourceRequestBody req $$ sinkLbs
-    -- liftIO $ print boundary
-    -- liftIO $ print "runRequest: "
-    -- liftIO $ BL.putStr b
-    -- let rsb = newResumableSource $ sourceRequestBody req
-
-    -- (rsb', d) <- rsb $$++ takeUntil boundary =$ sinkPart
-    -- liftIO $ print d
-    -- liftIO $ print "-----------"
-    -- (rsb'', d') <- rsb' $$++ consumePart boundary
-    -- liftIO $ print d'
-    -- liftIO $ print "-----------"
-    -- (rsb''', d'') <- rsb'' $$++ consumePart boundary
-    -- liftIO $ print d''
-    -- liftIO $ print "-----------"
-
-    -- forEachPart boundary rsb sinkFile'
-    -- return ()
-
-    -- sendEach boundary (newResumableSource $ sourceRequestBody req) sinkPrint
-
 multiSinkFile :: MonadResource m => Sink (Progress, ByteString) m ()
 multiSinkFile = multiSinkFile' newFile
 
@@ -76,26 +54,5 @@ iohPutStr ioh s = ioh >>= flip B.hPutStr s
 newFile :: IO Handle
 newFile = do
     fn <- liftIO $ fmap toString $ nextRandom
+    print fn
     openFile ("out/" ++ fn) WriteMode
-
-
--- forEachPart :: MonadIO m
---                => ByteString
---                -> ResumableSource m ByteString
---                -> Sink ByteString m ()
---                -> m ()
--- forEachPart boundary source sink = do
---     (source', _) <- source $$++ takeUntil boundary =$ sink
---     forEachPart boundary source' sink
-
--- sinkFile' :: MonadResource m => Sink ByteString m ()
--- sinkFile' = do
---     fn <- liftIO $ fmap toString $ nextRandom
---     sinkFile ("out/" ++ fn)
-
--- sinkPrint :: MonadResource m => Sink ByteString m ()
--- sinkPrint = do
---     mv <- await
---     case mv of
---         Just v -> liftIO (B.putStr v) >> sinkPrint
---         Nothing -> liftIO (putStrLn "") >> return ()

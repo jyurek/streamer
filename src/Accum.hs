@@ -29,15 +29,15 @@ takeUntil boundary = do
             case pv of
                 Nothing -> yield (EndContent, bs) >> return ()
                 Just _ -> do
-                    (before, after) <- B.breakSubstring boundary bs
+                    let (before, after) = B.breakSubstring boundary bs
                     if B.null after
                         then do
-                            leftover $ B.drop bl after
-                            yield (EndSection, before)
-                            takeUntil boundary
-                        else do
                             leftover $ B.drop (bl * 2) bs
                             yield $ (Continue, B.take (bl * 2) bs)
+                            takeUntil boundary
+                        else do
+                            leftover $ B.drop (bl+2) after
+                            yield (EndSection, before)
                             takeUntil boundary
 
 toStrict :: BL.ByteString -> ByteString
