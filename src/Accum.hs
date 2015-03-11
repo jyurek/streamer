@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Accum where
 
-import Control.Applicative
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Trans.Resource (runResourceT)
 import Data.ByteString (ByteString)
 import Data.Conduit
 
@@ -14,16 +12,19 @@ import qualified Data.Conduit.List as CL
 
 data Progress = Continue | EndSection | EndContent deriving Show
 
+chunkMult :: Int
+chunkMult = 5
+
 takeUntil :: MonadIO m
           => ByteString
           -> Conduit ByteString m (Progress, ByteString)
 takeUntil boundary = do
     let bl = B.length boundary
-    lbs <- CB.take $ bl * 3
+    lbs <- CB.take $ bl * chunkMult
     let bs = toStrict lbs
 
     if B.null bs
-        then liftIO $ print "END" >> return ()
+        then return ()
         else do
             pv <- CL.peek
             case pv of
@@ -32,8 +33,8 @@ takeUntil boundary = do
                     let (before, after) = B.breakSubstring boundary bs
                     if B.null after
                         then do
-                            leftover $ B.drop (bl * 2) bs
-                            yield $ (Continue, B.take (bl * 2) bs)
+                            leftover $ B.drop (bl * (chunkMult-1)) bs
+                            yield $ (Continue, B.take (bl * (chunkMult-1)) bs)
                             takeUntil boundary
                         else do
                             leftover $ B.drop (bl+2) after
