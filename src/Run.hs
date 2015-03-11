@@ -21,31 +21,28 @@ runRequest boundary req = runResourceT $ do
     return ()
 
 multiSinkFile :: MonadResource m => Sink (Progress, ByteString) m ()
-multiSinkFile = multiSinkFile' newFile
+multiSinkFile = liftIO newFile >>= multiSinkFile'
 
-multiSinkFile' :: MonadResource m => IO Handle -> Sink (Progress, ByteString) m ()
+multiSinkFile' :: MonadResource m => Handle -> Sink (Progress, ByteString) m ()
 multiSinkFile' f = do
     mv <- await
     case mv of
         Nothing -> return ()
         Just (s, d) -> do
+            liftIO $ print s
             case s of
                 Continue -> do
-                    liftIO $ iohPutStr f d
+                    liftIO $ B.hPutStr f d
+                    liftIO $ putStrLn "."
                     multiSinkFile' f
                 EndSection -> do
-                    liftIO $ iohPutStr f d
-                    liftIO $ iohClose f
-                    multiSinkFile' newFile
+                    liftIO $ B.hPutStr f d
+                    liftIO $ hClose f
+                    f' <- liftIO newFile
+                    multiSinkFile' f'
                 EndContent -> do
-                    liftIO $ iohPutStr f d
-                    liftIO $ iohClose f
-
-iohClose :: IO Handle -> IO ()
-iohClose ioh = ioh >>= hClose
-
-iohPutStr :: IO Handle -> ByteString -> IO ()
-iohPutStr ioh s = ioh >>= flip B.hPutStr s
+                    liftIO $ B.hPutStr f d
+                    liftIO $ hClose f
 
 newFile :: IO Handle
 newFile = do
