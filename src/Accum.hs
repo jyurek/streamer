@@ -13,7 +13,7 @@ import qualified Data.Conduit.List as CL
 data Progress = Continue | EndSection | EndContent deriving Show
 
 chunkMult :: Int
-chunkMult = 5
+chunkMult = 10
 
 takeUntil :: MonadIO m
           => ByteString
