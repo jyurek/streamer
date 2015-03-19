@@ -17,6 +17,7 @@ app :: Application
 app req respond = do
     let headers = requestHeaders req
         Just boundary = extractBoundary headers
+    print boundary
     runRequest boundary req
     respond $ responseLBS status200 [] "OK\n"
 
