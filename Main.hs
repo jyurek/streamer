@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Run
+import Streamer.Run
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8 (dropWhile)

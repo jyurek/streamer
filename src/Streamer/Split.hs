@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Accum where
+module Streamer.Split where
 
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.ByteString (ByteString)

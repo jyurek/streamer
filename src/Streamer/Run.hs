@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Run where
+module Streamer.Run where
 
-import Accum
+import Streamer.Split
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Resource (MonadResource, runResourceT)
@@ -14,6 +14,7 @@ import Network.Wai.Conduit (sourceRequestBody)
 import System.IO (openFile, hClose, Handle, IOMode(WriteMode))
 
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BL
 
 runRequest :: ByteString -> Request -> IO ()
 runRequest boundary req = runResourceT $ do
