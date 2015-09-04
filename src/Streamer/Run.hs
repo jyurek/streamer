@@ -8,7 +8,7 @@ import Control.Monad.Trans.Resource (MonadResource, runResourceT)
 import Data.ByteString (ByteString)
 import Data.Conduit
 import Data.UUID
-import Data.UUID.V4
+import Data.UUID.V4 (nextRandom)
 import Network.Wai (Request)
 import Network.Wai.Conduit (sourceRequestBody)
 import System.IO (openFile, hClose, Handle, IOMode(WriteMode))
@@ -31,17 +31,16 @@ multiSinkFile' f = do
         Nothing -> return ()
         Just p -> do
             case p of
-                Continue d -> do
-                    liftIO $ B.hPutStr f d
-                    multiSinkFile' f
-                EndSection d -> do
-                    liftIO $ B.hPutStr f d
-                    liftIO $ hClose f
+                StartContent -> do
                     f' <- liftIO newFile
                     multiSinkFile' f'
+                MoreContent d -> do
+                    liftIO $ B.hPutStr f d
+                    multiSinkFile' f
                 EndContent d -> do
                     liftIO $ B.hPutStr f d
                     liftIO $ hClose f
+                    multiSinkFile' f
 
 newFile :: IO Handle
 newFile = do

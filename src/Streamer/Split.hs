@@ -10,25 +10,36 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Conduit.Binary as CB
 import qualified Data.Conduit.List as CL
 
-data Progress = Continue ByteString
-              | EndSection ByteString
-              | EndContent ByteString
-                  deriving Show
+data Progress = StartContent
+              | MoreContent B.ByteString
+              | EndContent B.ByteString
+                  deriving (Show, Eq)
 
-chunkMult :: Int
-chunkMult = 10
+chunkSizes :: Int -> (Int, Int, Int)
+chunkSizes x = (x, x*(multiplier-1), x*multiplier)
+    where multiplier = 10
 
 takeUntil :: MonadIO m
           => ByteString
           -> Conduit ByteString m Progress
 takeUntil boundary = do
+    takeUntil' boundary True
+
+takeUntil' :: MonadIO m
+           => ByteString
+           -> Bool
+           -> Conduit ByteString m Progress
+takeUntil' boundary startNew = do
     let bl = B.length boundary
-    lbs <- CB.take $ bl * chunkMult
+    let (boundarySize, keepSize, chunkSize) = chunkSizes(bl)
+    lbs <- CB.take chunkSize
     let bs = toStrict lbs
 
     if B.null bs
         then return ()
         else do
+            if startNew then yield StartContent
+                        else return ()
             let (before, after) = B.breakSubstring boundary bs
             if B.null after
                 then do
@@ -38,17 +49,13 @@ takeUntil boundary = do
                             yield $ EndContent bs
                             return ()
                         Just _ -> do
-                            leftover $ B.drop (bl * (chunkMult-1)) bs
-                            yield $ Continue $ B.take (bl * (chunkMult-1)) bs
-                            takeUntil boundary
+                            leftover $ B.drop keepSize bs
+                            yield $ MoreContent $ B.take keepSize bs
+                            takeUntil' boundary False
                 else do
-                    leftover $ B.drop (bl+2) after
-                    yield $ EndSection before
-                    takeUntil boundary
+                    leftover $ B.drop (boundarySize+2) after
+                    yield $ EndContent before
+                    takeUntil' boundary True
 
 toStrict :: BL.ByteString -> ByteString
 toStrict = B.concat . BL.toChunks
-
--- isOpen :: (MonadIO m) => ConduitM i o m Bool
--- isOpen = await >>= maybe (return False) ((True <$) . leftover)
--- -- isOpen = CL.peek >>= maybe (return False) (return True)

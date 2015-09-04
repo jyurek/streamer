@@ -16,13 +16,17 @@ main = run 12345 app
 app :: Application
 app req respond = do
     let headers = requestHeaders req
-        Just boundary = extractBoundary headers
-    print boundary
-    runRequest boundary req
-    respond $ responseLBS status200 [] "OK\n"
+        mb = extractBoundary headers
+    case mb of
+        Nothing ->
+            respond $ responseLBS status200 [] "OK\n"
+        Just boundary -> do
+            runRequest boundary req
+            respond $ responseLBS status200 [] "OK\n"
 
 extractBoundary :: RequestHeaders -> Maybe B.ByteString
 extractBoundary [] = Nothing
-extractBoundary ((hn, hv):hs)
+extractBoundary headers@((hn, hv):hs)
     | hn == "Content-Type" = Just $ ("--" <>) . C8.dropWhile (=='=') . C8.dropWhile (/='=') $ hv
+    | headers == [] = Nothing
     | otherwise = extractBoundary hs
